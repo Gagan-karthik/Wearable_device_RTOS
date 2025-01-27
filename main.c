@@ -14,9 +14,9 @@
 
 // Define task priorities and stack sizes
 #define STACK_SIZE 1024
-#define PRIORITY_BLE_TASK 2
-#define PRIORITY_FLASH_TASK 3
-#define PRIORITY_SENSOR_TASK 4
+#define PRIORITY_BLE_TASK 3
+#define PRIORITY_FLASH_TASK 2
+#define PRIORITY_SENSOR_TASK 1
 
 // Flash storage configuration
 #define FLASH_BASE_ADDRESS DT_FLASH_AREA_STORAGE_OFFSET
@@ -34,15 +34,15 @@ struct sensor_session {
 K_MSGQ_DEFINE(sensor_data_msgq, sizeof(struct sensor_session), 10, 4); // Message queue
 K_MUTEX_DEFINE(flash_mutex);
 
-static bool is_session_active = false;
+bool is_session_active = false;
 static const struct device *flash_dev;
 
 // Thread references for flash and sensor tasks
 static struct k_thread flash_data_thread;
 static struct k_thread sensor_data_thread;
 static struct k_thread ble_thread;
-static k_tid_t flash_thread_id = NULL;
-static k_tid_t sensor_thread_id = NULL;
+k_tid_t flash_thread_id = NULL;
+k_tid_t sensor_thread_id = NULL;
 static k_tid_t ble_thread_id = NULL;
 
 // Stack for sensor and flash tasks
@@ -71,7 +71,7 @@ BT_GATT_SERVICE_DEFINE(sensor_Data_service,
 
 // Initialize Flash device
 static const struct device *flash_init(void) {
-    const struct device *flash_dev = device_get_binding(DT_LABEL(DT_NODELABEL(flash0))); // Point to device struct
+    const struct device *flash_dev = device_get_binding(DT_LABEL(DT_NODELABEL(flash0))); 
     if (!flash_dev) {
         printk("No Flash device found\n");
         return NULL;
@@ -138,26 +138,12 @@ static void flash_task(void) {
     }
 }
 
-// BLE connection callbacks
-static void connected(struct bt_conn *conn, uint8_t err) {
-    if (err) {
-        printk("Failed to connect (err %u)\n", err);
-        return;
-    }
-    printk("Connected\n");
-}
-
-static void disconnected(struct bt_conn *conn, uint8_t reason) {
-    printk("Disconnected (reason %u)\n", reason);
-    is_session_active = false; // Ensure polling stops if disconnected
-    printk("Session stopped due to disconnection\n");
-}
-
 // BLE callbacks for session control
 static ssize_t start_session_write(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf, uint16_t len, uint16_t offset, uint8_t flags) {
     printk("Session started\n");
 
-    if (!is_session_active) { // Start only if not already active
+ // Start only if not already active
+    if (!is_session_active) {
         is_session_active = true;
 
         // Start the sensor and flash tasks
@@ -174,10 +160,10 @@ static ssize_t start_session_write(struct bt_conn *conn, const struct bt_gatt_at
 static ssize_t stop_session_write(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf, uint16_t len, uint16_t offset, uint8_t flags) {
     printk("Session stopped\n");
 
-    if (is_session_active) { // Stop only if active
+    if (is_session_active) { 
         is_session_active = false;
 
-        // Stop the sensor and flash threads (terminate the threads cleanly)
+        // Stop the sensor and flash threads
         if (sensor_thread_id != NULL) {
             k_thread_abort(sensor_thread_id);
             sensor_thread_id = NULL;
@@ -211,6 +197,4 @@ void main(void) {
     i2c_dev = i2c_init();
     flash_dev = flash_init();
     ble_thread_id = k_thread_create(&ble_thread, ble_stack_area, K_THREAD_STACK_SIZEOF(ble_stack_area),ble_init, NULL, NULL, NULL, PRIORITY_BLE_TASK, 0, K_NO_WAIT);
-
-    // Further initialization if required
 }

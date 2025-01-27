@@ -1,4 +1,3 @@
-// imu_driver.h
 #ifndef IMU_DRIVER_H
 #define IMU_DRIVER_H
 #include <zephyr.h>
@@ -6,4 +5,4 @@
 
 int read_imu_data(uint8_t *buffer);
 
-#endif // IMU_DRIVER_H
+#endif

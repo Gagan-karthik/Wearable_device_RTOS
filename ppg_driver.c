@@ -1,4 +1,3 @@
-// ppg_driver.c
 #include "ppg_driver.h"
 #include "i2c_communication.h"
 #include <sys/printk.h>

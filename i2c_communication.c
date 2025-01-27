@@ -1,4 +1,4 @@
-// i2c_communication.c
+
 #include "i2c_communication.h"
 #include <drivers/i2c.h>
 #include <sys/printk.h>

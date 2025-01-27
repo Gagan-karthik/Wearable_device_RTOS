@@ -1,4 +1,3 @@
-// ppg_driver.h
 #ifndef PPG_DRIVER_H
 #define PPG_DRIVER_H
 
